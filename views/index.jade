@@ -1,0 +1,21 @@
+!!! 5
+html
+    head
+      title= "hi"
+      script(type="text/javascript",src="/jquery.js")
+      script(type="text/javascript",src="/client.js")
+      script(type="text/javascript",src="/d3.js")
+      link(type="text/css", rel="stylesheet", href="/style.css")
+      //if lt IE 9
+        script(src="http://html5shim.googlecode.com/svn/trunk/html5.js", language="text/javascript")
+    body
+        block content
+          div.container
+            h1 Visualize your Mercurial Commits!
+            form(method='post',onSubmit="return false",id="")
+            input(id="filename", type="text")
+            input(id="load",type="button",value="Load 'em up")
+            div(id="loading")
+            input(id="byDay",type="button",value="Commits/Day")
+            br
+            input(id="byWeek",type="button",value="Commits/Week")

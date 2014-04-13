@@ -1,0 +1,18 @@
+{
+  "name": "hgvis",
+  "version": "0.0.0",
+  "description": "Visualize Mercurial commits",
+  "main": "hgvis.js",
+  "scripts": {
+  },
+  "keywords": [
+    "visualize",
+    "mercurial"
+  ],
+  "author": "Ng Zhi An",
+  "license": "ISC",
+  "dependencies": {
+    "express": "3.x",
+    "jade": "0.27.7"
+  }
+}

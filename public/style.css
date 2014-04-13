@@ -1,0 +1,11 @@
+rect.bar:nth-child(even) {
+	fill: #84D628; 
+}
+
+rect.bar:nth-child(odd) {
+	fill: #FF5E45;
+}
+
+.axis {
+	fill: #254759;
+}
