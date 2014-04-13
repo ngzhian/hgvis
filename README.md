@@ -1,0 +1,4 @@
+hgvis
+=====
+
+Visualize Mercurial commits
