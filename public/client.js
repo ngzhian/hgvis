@@ -25,104 +25,97 @@ var loadCommit = function() {
 
 var graphByDay = function() {
   graph2dDiscrete(byDay(), function(d) {
-      return d.date;
-    }, function(d) {
-      return d.freq;
-    });
+    return d.x;
+  }, function(d) {
+    return d.y;
+  });
 }
 
-var getDMY = function(c) {
+var graphByWeek = function() {
+  graph2dDiscrete(byWeek(), function(d) {
+    return d.date;
+  }, function(d) {
+    return d.freq;
+  });
+}
+
+// Commit c => [c] -> (c -> x) -> (c -> y) -> [(x,y)]
+var getArrOfXY = function(cs, getX, getY) {
+  var agg = {};
+  cs.forEach(function(v, i, a) {
+    var aggBy = getX(v);
+    if (agg[aggBy] == undefined) {
+      agg[aggBy] = 0;
+    }
+    agg[aggBy]++;
+  });
+  var arr = [];
+  for (var aggBy in agg) {
+    arr.push({ 'x': aggBy, 'y': agg[aggBy]});
+  }
+  return arr;
+}
+
+var byDay = function() {
+ var arr = getArrOfXY(window.hgvis_commits,
+  function getDMY(c) {
     var date = new Date(c.date);
     return [date.getDate(), date.getMonth()+1,
     date.getFullYear()].join("/");
-  };
+  }, function f() {});
+ return arr;
+}
 
-  var byDay = function() {
-    if (window.hgvis_commits == undefined) {
-      error('commits not loaded, click load all!');
-      return;
-    }
-    var commits = window.hgvis_commits;
-
-  // separate commits by day
-  var commitsByDay = {};
-  commits.map(function(commit) {
-    var dmy = getDMY(commit);
-    if (commitsByDay[dmy] == undefined) {
-      commitsByDay[dmy] = 0;
-    }
-    commitsByDay[dmy]++;
-  });
-
-    // put commits into an array
-    var commitsArr = [];
-    for (var dmy in commitsByDay) {
-      var obj = {};
-      obj.date = dmy;
-      obj.freq = commitsByDay[dmy];
-      commitsArr.push(obj);
-    }
-    return commitsArr;
+var byWeek = function() {
+  if (window.hgvis_commits == undefined) {
+    error('commits not loaded, click load all!');
+    return;
   }
-
-  var graphByWeek = function() {
-    graph2dDiscrete(byWeek(), function(d) {
-      return d.date;
-    }, function(d) {
-      return d.freq;
-    });
-  }
-
-  var byWeek = function() {
-    if (window.hgvis_commits == undefined) {
-      error('commits not loaded, click load all!');
-      return;
-    }
-    var commits = window.hgvis_commits;
+  var commits = window.hgvis_commits;
 
   // separate commits by day
   var commitsByWeek = {};
   var base = new Date(commits[0].date).getTime();
 
-  var getWeekNum = function(commit) {
+  function getWeekNum(commit) {
     var ms = new Date(commit.date).getTime();
     return Math.floor((ms - base) / (1000 * 60 * 60 * 24 * 7));
   }
 
   commits.map(function(commit) {
-      var weekNum = getWeekNum(commit);
-      if (commitsByWeek[weekNum] == undefined) {
-        commitsByWeek[weekNum] = 0;
-      } else {
-        commitsByWeek[weekNum]++;
-      }
+    var weekNum = getWeekNum(commit);
+    if (commitsByWeek[weekNum] == undefined) {
+      commitsByWeek[weekNum] = 0;
+    } else {
+      commitsByWeek[weekNum]++;
+    }
   });
 
-    // put commits into an array
-    var commitsArr = [];
-    for (var week in commitsByWeek) {
-      var obj = {};
-      obj.date = week;
-      obj.freq = commitsByWeek[week];
-      commitsArr.push(obj);
-    }
-    return commitsArr;
+  // put commits into an array
+  var commitsArr = [];
+  for (var week in commitsByWeek) {
+    var obj = {};
+    obj.date = week;
+    obj.freq = commitsByWeek[week];
+    commitsArr.push(obj);
   }
+  return commitsArr;
+}
 
-  var error = function(msg) {
-    console.log(msg);
-    $('#loading').html(msg);
-  };
+var error = function(msg) {
+  console.log(msg);
+  $('#loading').html(msg);
+};
 
-  function graph2dDiscrete(data, getX, getY) {
-    // data is an array of objects [a,b,c]
-    // getx is a fn such that getx(a) gives me the xaxis values
-    // gety is a fn such that gety(a) gives me the yaxis values
+function graph2dDiscrete(data, getX, getY) {
+  // data is an array of objects [a,b,c]
+  // getx is a fn such that getx(a) gives me the xaxis values
+  // gety is a fn such that gety(a) gives me the yaxis values
 
   var margin = {top: 20, right: 30, bottom: 80, left: 60},
-      width = 960 - margin.left - margin.right,
-      height = 500 - margin.top - margin.bottom;
-      bar_width = 20;
+  width = 960 - margin.left - margin.right,
+  height = 500 - margin.top - margin.bottom;
+  bar_width = 20;
 
   var x = d3.scale.ordinal().rangeRoundBands([0, data.length * bar_width], .1);
   var y = d3.scale.linear().range([height, 0]);
@@ -174,4 +167,4 @@ var getDMY = function(c) {
   .on("mouseover", function() {
   })
   .on("mouseout", function() { d3.select(this).classed('hover', false); });
-  }
+}
