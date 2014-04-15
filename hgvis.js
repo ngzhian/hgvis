@@ -1,7 +1,11 @@
 var fs = require('fs');
 
 function readLog(filename) {
-	return fs.readFileSync(filename, {encoding: 'ucs2'});
+	try {
+		return fs.readFileSync(filename, {encoding: 'ucs2'});
+	} catch (err) {
+		return undefined;
+	}
 }
 
 function listToCommits(list) {
@@ -79,6 +83,9 @@ Commit.prototype.toString = function() {
 exports.getCommits = function(filename) {
 	filename = filename || 'hglogsmall';
 	var data = readLog(filename);
+	if (data == undefined) {
+		return undefined;
+	}
 	var list = data.toString().split("\n");
 	var commits = listToCommits(list);
   var sortedCommits = commits.sort(

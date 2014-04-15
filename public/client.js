@@ -2,6 +2,7 @@ $(document).ready(function(){
   $("#load").click(loadCommit);           
   $("#byDay").click(graphByDay);
   $("#byWeek").click(graphByWeek);
+  loadCommit();
 });
 
 var loadCommit = function() {
@@ -23,65 +24,15 @@ var loadCommit = function() {
 }
 
 var graphByDay = function() {
-  var data = byDay();
-
-  var margin = {top: 20, right: 30, bottom: 80, left: 60},
-  width = 960 - margin.left - margin.right,
-  height = 500 - margin.top - margin.bottom;
-  barWidth = 40;
-
-  var x = d3.scale.ordinal().rangeRoundBands([0, width], .1);
-  var y = d3.scale.linear().range([height, 0]);
-
-  var xAxis = d3.svg.axis().scale(x).orient("bottom");
-  var yAxis = d3.svg.axis().scale(y).orient("left");
-
-  x.domain(data.map(function(d) { return d.date; }));
-  y.domain([0, d3.max(data, function(d) { return d.freq; })]);
-
-  var svg = d3.select("body").append("svg")
-  .attr("width", width + margin.left + margin.right)
-  .attr("height", height + margin.top + margin.bottom)
-  .append("g")
-  .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-  var x_axis = svg.append("g")
-  .attr("class", "x axis")
-  .attr("transform", "translate(0," + height + ")")
-  .call(xAxis);
-  x_axis.selectAll("text")
-  .style("text-anchor", "end")
-  .attr("dx", "-.8em")
-  .attr("dy", ".15em")
-  .attr("transform", "rotate(-65)")
-  .attr("font-size", ".6em");
-  x_axis.append("text")
-  .attr("x", width/2)
-  .attr("y", 70)
-  .text("Days");
-
-  svg.append("g").attr("class", "y axis")
-  .call(yAxis)
-  .append("text")
-  .attr("transform", "rotate(90)")
-  .attr("y", 50)
-  .attr("x", height/2)
-  .style("text-anchor", "end")
-  .text("Frequency");
-
-  svg.selectAll(".bar").data(data)
-  .enter().append("rect")
-  .attr("class", "bar")
-  .attr("x", function(d) { return x(d.date); })
-  .attr("width", x.rangeBand())
-  .attr("y", function(d) { return y(d.freq); })
-  .attr("height", function(d) { return height - y(d.freq); });
+  graph2dDiscrete(byDay(), function(d) {
+      return d.date;
+    }, function(d) {
+      return d.freq;
+    });
 }
 
 var getDMY = function(c) {
-    // console.log(commit.date);
     var date = new Date(c.date);
-    // console.log(date.tostring());
     return [date.getDate(), date.getMonth()+1,
     date.getFullYear()].join("/");
   };
@@ -115,57 +66,11 @@ var getDMY = function(c) {
   }
 
   var graphByWeek = function() {
-    var data = byWeek();
-
-    var margin = {top: 20, right: 30, bottom: 60, left: 60},
-    width = 960 - margin.left - margin.right,
-    height = 500 - margin.top - margin.bottom;
-    barWidth = 40;
-
-    var x = d3.scale.ordinal().rangeRoundBands([0, width], .1);
-    var y = d3.scale.linear().range([height, 0]);
-
-    var xAxis = d3.svg.axis().scale(x).orient("bottom");
-    var yAxis = d3.svg.axis().scale(y).orient("left");
-
-    x.domain(data.map(function(d) { return d.date; }));
-    y.domain([0, d3.max(data, function(d) { return d.freq; })]);
-
-    var svg = d3.select("body").append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-    .append("g")
-    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-    var x_axis = svg.append("g").attr("class", "x axis")
-    .attr("transform", "translate(0," + height + ")").call(xAxis);
-    x_axis.selectAll("text")
-    .style("text-anchor", "end")
-    .attr("dx", "-.8em")
-    .attr("dy", ".15em")
-    .attr("transform", "rotate(-65)")
-    .attr("font-size", ".6em");
-    x_axis.append("text")
-    .attr("x", width/2)
-    .attr("y", 30)
-    .text("Week");
-
-    svg.append("g").attr("class", "y axis")
-    .call(yAxis)
-    .append("text")
-    .attr("transform", "rotate(90)")
-    .attr("y", 50)
-    .attr("x", height/2)
-    .style("text-anchor", "end")
-    .text("Frequency");
-
-    svg.selectAll(".bar").data(data)
-    .enter().append("rect")
-    .attr("class", "bar")
-    .attr("x", function(d) { return x(d.date); })
-    .attr("width", x.rangeBand())
-    .attr("y", function(d) { return y(d.freq); })
-    .attr("height", function(d) { return height - y(d.freq); });
+    graph2dDiscrete(byWeek(), function(d) {
+      return d.date;
+    }, function(d) {
+      return d.freq;
+    });
   }
 
   var byWeek = function() {
@@ -207,4 +112,66 @@ var getDMY = function(c) {
   var error = function(msg) {
     console.log(msg);
     $('#loading').html(msg);
+  };
+
+  function graph2dDiscrete(data, getX, getY) {
+    // data is an array of objects [a,b,c]
+    // getx is a fn such that getx(a) gives me the xaxis values
+    // gety is a fn such that gety(a) gives me the yaxis values
+
+  var margin = {top: 20, right: 30, bottom: 80, left: 60},
+      width = 960 - margin.left - margin.right,
+      height = 500 - margin.top - margin.bottom;
+      bar_width = 20;
+
+  var x = d3.scale.ordinal().rangeRoundBands([0, data.length * bar_width], .1);
+  var y = d3.scale.linear().range([height, 0]);
+
+  var xAxis = d3.svg.axis().scale(x).orient("bottom");
+  var yAxis = d3.svg.axis().scale(y).orient("left");
+
+  x.domain(data.map(function(d) { return getX(d); }));
+  y.domain([0, d3.max(data, function(d) { return getY(d); })]);
+
+  var svg = d3.select("body").append("svg")
+  .attr("width", width + margin.left + margin.right)
+  .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+  .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+  var x_axis = svg.append("g")
+  .attr("class", "x axis")
+  .attr("transform", "translate(0," + height + ")")
+  .call(xAxis);
+  x_axis.selectAll("text")
+  .style("text-anchor", "end")
+  .attr("dx", "-.8em")
+  .attr("dy", ".15em")
+  .attr("transform", "rotate(-65)")
+  .attr("font-size", ".6em");
+  x_axis.append("text")
+  .attr("x", width/2)
+  .attr("y", 70)
+  .text("the X");
+
+  svg.append("g").attr("class", "y axis")
+  .call(yAxis)
+  .append("text")
+  .attr("transform", "rotate(90)")
+  .attr("y", 50)
+  .attr("x", height/2)
+  .style("text-anchor", "end")
+  .text("the Y");
+
+  svg.selectAll(".bar").data(data)
+  .enter().append("rect")
+  .attr("class", "bar")
+  .attr("x", function(d) { return x(getX(d)); })
+  .attr("width", x.rangeBand())
+  .attr("y", function(d) { return y(getY(d)); })
+  .attr("id", function(d) { return d; })
+  .attr("height", function(d) { return height - y(getY(d)); })
+  .on("mouseover", function() {
+  })
+  .on("mouseout", function() { d3.select(this).classed('hover', false); });
   }
