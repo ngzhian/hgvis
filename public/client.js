@@ -1,6 +1,6 @@
 $(document).ready(function(){
   $("#load").click(loadCommit);           
-  $("#byDay").click(graphByDay);
+  $("#commitsPerDay").click(graphcommitsPerDay);
   $("#byWeek").click(graphByWeek);
   loadCommit();
 });
@@ -14,7 +14,7 @@ var loadCommit = function() {
   .done(function(data) {
     window.hgvis_commits = data.all;
     $("#load").attr('value', 'done!');
-    graphByDay();
+    graphcommitsPerDay();
     graphByWeek();
   })
   .fail(function (jqxhr, textStatus, error) {
@@ -23,8 +23,17 @@ var loadCommit = function() {
   });
 }
 
-var graphByDay = function() {
-  graph2dDiscrete(byDay(), function(d) {
+var graphcommitsPerDay = function() {
+  graph2dDiscrete(commitsPerDay(), function(d) {
+    return d.x;
+  }, function(d) {
+    return d.y;
+  });
+  graphcommitsPerDev();
+}
+
+var graphcommitsPerDev = function() {
+  graph2dDiscrete(commitsPerDev(), function(d) {
     return d.x;
   }, function(d) {
     return d.y;
@@ -40,30 +49,32 @@ var graphByWeek = function() {
 }
 
 // Commit c => [c] -> (c -> x) -> (c -> y) -> [(x,y)]
-var getArrOfXY = function(cs, getX, getY) {
-  var agg = {};
+var aggregateOnX = function(cs, getX, getY) {
+  var agg = {}, aggBy, arr = [];
   cs.forEach(function(v, i, a) {
-    var aggBy = getX(v);
-    if (agg[aggBy] == undefined) {
-      agg[aggBy] = 0;
-    }
+    aggBy = getX(v);
+    agg[aggBy] = agg[aggBy] || 0;
     agg[aggBy]++;
   });
-  var arr = [];
-  for (var aggBy in agg) {
+  for (aggBy in agg) {
     arr.push({ 'x': aggBy, 'y': agg[aggBy]});
   }
   return arr;
 }
 
-var byDay = function() {
- var arr = getArrOfXY(window.hgvis_commits,
-  function getDMY(c) {
+var commitsPerDay = function() {
+ return aggregateOnX(window.hgvis_commits,
+  function(c) {
     var date = new Date(c.date);
-    return [date.getDate(), date.getMonth()+1,
-    date.getFullYear()].join("/");
-  }, function f() {});
- return arr;
+    return [date.getDate(), date.getMonth()+1, date.getFullYear()].join("/");
+  });
+}
+
+var commitsPerDev = function() {
+ return aggregateOnX(window.hgvis_commits,
+  function(c) {
+    return c.authorName;
+  });
 }
 
 var byWeek = function() {
