@@ -7,5 +7,22 @@ rect.bar:nth-child(odd) {
 }
 
 .axis {
-	fill: #254759;
+	fill: none;
+  shape-rendering: crispEdges;
+  stroke: #000;
+}
+
+body {
+  font: 10px sans-serif;
+
+}
+.axis path,
+.axis line {
+  fill: none;
+}
+
+.line {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 1.5px;
 }

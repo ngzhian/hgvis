@@ -1,6 +1,6 @@
 $(document).ready(function(){
   $("#load").click(loadCommit);           
-  $("#commitsPerDay").click(graphcommitsPerDay);
+  $("#byDay").click(graphcommitsPerDay);
   $("#byWeek").click(graphByWeek);
   loadCommit();
 });
@@ -14,8 +14,6 @@ var loadCommit = function() {
   .done(function(data) {
     window.hgvis_commits = data.all;
     $("#load").attr('value', 'done!');
-    graphcommitsPerDay();
-    graphByWeek();
   })
   .fail(function (jqxhr, textStatus, error) {
     alert(textStatus);
@@ -24,12 +22,16 @@ var loadCommit = function() {
 }
 
 var graphcommitsPerDay = function() {
+  graph2dLine(commitsPerDay(), function(d) {
+    return d.x
+  }, function(d) {
+    return d.y;
+  });
   graph2dDiscrete(commitsPerDay(), function(d) {
     return d.x;
   }, function(d) {
     return d.y;
   });
-  graphcommitsPerDev();
 }
 
 var graphcommitsPerDev = function() {
@@ -118,6 +120,70 @@ var error = function(msg) {
   $('#loading').html(msg);
 };
 
+function graph2dLine(data, getX, getY) {
+  var margin = {top: 20, right: 30, bottom: 20, left: 60},
+  width = 960 - margin.left - margin.right,
+  height = 500 - margin.top - margin.bottom;
+  bar_width = 40;
+
+  var x = d3.scale.ordinal().rangeRoundBands([0, data.length * bar_width], .1);
+  var y = d3.scale.linear().range([height, 0]);
+
+  var xAxis = d3.svg.axis().scale(x).orient("bottom");
+  var yAxis = d3.svg.axis().scale(y).orient("left");
+
+  x.domain(data.map(function(d) { return getX(d); }));
+  y.domain([0, d3.max(data, function(d) { return getY(d); })]);
+
+  var svg = d3.select("body").append("svg")
+  .attr("width", width + margin.left + margin.right)
+  .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+  .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+  var x_axis = svg.append("g")
+  .attr("class", "x axis")
+  .attr("transform", "translate(0," + height + ")")
+  .call(xAxis);
+  x_axis.selectAll("text")
+  .style("text-anchor", "end")
+  .attr("font-size", ".6em");
+  // x_axis.append("text")
+  // .attr("x", width/2)
+  // .attr("y", 70)
+  // .text("the X");
+
+  svg.append("g").attr("class", "y axis")
+  .call(yAxis)
+  .append("text")
+  .attr("transform", "rotate(90)")
+  .attr("y", 50)
+  .attr("x", height/2)
+  .style("text-anchor", "end")
+  .text("the Y");
+
+  var line = d3.svg.line()
+  .x(function(d) { return x(getX(d)); })
+  .y(function(d) { return y(getY(d)); });
+
+  svg.append("path")
+  .datum(data)
+  .attr("class", "line")
+  .attr("d", line);
+
+  // svg.selectAll(".bar").data(data)
+  // .enter().append("rect")
+  // .attr("class", "bar")
+  // .attr("x", function(d) { return x(getX(d)); })
+  // .attr("width", x.rangeBand())
+  // .attr("y", function(d) { return y(getY(d)); })
+  // .attr("id", function(d) { return d; })
+  // .attr("height", function(d) { return height - y(getY(d)); })
+  // .on("mouseover", function() {
+  // })
+  // .on("mouseout", function() { d3.select(this).classed('hover', false); });
+}
+
 function graph2dDiscrete(data, getX, getY) {
   // data is an array of objects [a,b,c]
   // getx is a fn such that getx(a) gives me the xaxis values
@@ -126,7 +192,7 @@ function graph2dDiscrete(data, getX, getY) {
   var margin = {top: 20, right: 30, bottom: 80, left: 60},
   width = 960 - margin.left - margin.right,
   height = 500 - margin.top - margin.bottom;
-  bar_width = 20;
+  bar_width = 40;
 
   var x = d3.scale.ordinal().rangeRoundBands([0, data.length * bar_width], .1);
   var y = d3.scale.linear().range([height, 0]);
