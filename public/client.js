@@ -14,6 +14,7 @@ var loadCommit = function() {
   .done(function(data) {
     window.hgvis_commits = data.all;
     $("#load").attr('value', 'done!');
+    graphcommitsPerDay();
   })
   .fail(function (jqxhr, textStatus, error) {
     alert(textStatus);
@@ -21,7 +22,98 @@ var loadCommit = function() {
   });
 }
 
+var lineChartAggregateOverDate = function(data, dateFmt) {
+  var margin = {top: 20, right: 20, bottom: 30, left: 50},
+  width = 960 - margin.left - margin.right,
+  height = 500 - margin.top - margin.bottom;
+
+  var parseDate = dateFmt.parse;
+
+  var x = d3.time.scale()
+  .range([0, width]);
+
+  var y = d3.scale.linear()
+  .range([height, 0]);
+
+  var line = d3.svg.line()
+  .x(function(d) { return x(d.x); })
+  .y(function(d) { return y(d.agg); });
+
+  var svg = d3.select("body").append("svg")
+  .attr("width", width + margin.left + margin.right)
+  .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+  .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+  data.forEach(function(d) {
+    d.x = parseDate(d.date);
+    d.y = +d.agg;
+  });
+
+  x.domain(d3.extent(data, function(d) { return d.x; }));
+  y.domain(d3.extent(data, function(d) { return d.y; }));
+
+  var xAxis = d3.svg.axis()
+  .scale(x)
+  .orient("bottom");
+
+  var yAxis = d3.svg.axis()
+  .scale(y)
+  .orient("left");
+
+  svg.append("g")
+  .attr("class", "x axis")
+  .attr("transform", "translate(0," + height + ")")
+  .call(xAxis);
+
+  svg.append("g")
+  .attr("class", "y axis")
+  .call(yAxis)
+  .append("text")
+  .attr("transform", "rotate(-90)")
+  .attr("y", 6)
+  .attr("dy", ".71em")
+  .style("text-anchor", "end")
+  .text("# commits");
+
+  svg.append("path")
+  .datum(data)
+  .attr("class", "line")
+  .attr("d", line);
+
+  svg.selectAll(".commit-circle").data(data)
+  .enter().append("g")
+  .append("circle")
+  .attr("class", "commit-circle")
+  .attr("cx", function(d) { return x(d.x); })
+  .attr("r", 15)
+  .attr("cy", function(d) { return y(d.y); })
+  .on("mouseenter", function(d) {
+    var format = d3.time.format("%d/%m/%Y");
+    var xPosition = d3.event.pageX + 10;
+    var yPosition = d3.event.pageY;
+    var tooltip = d3.select("#tooltip")
+    .style("left", xPosition + "px")
+    .style("top", yPosition + "px")
+    tooltip.select("#title").text(format(d.x));
+    tooltip.select("#desc").text(d.y + " commits");
+    tooltip.classed("hidden", false);
+  })
+  .on("mouseleave", function() {
+    d3.select("#tooltip").classed("hidden", true);
+  });
+}
+
 var graphcommitsPerDay = function() {
+  var commits = commitsPerDay();
+  commits.forEach(function(c) {
+    c.date = c.x;
+    delete c.x;
+    c.agg = c.y;
+    delete c.y;
+  });
+  lineChartAggregateOverDate(commits, d3.time.format("%d/%m/%Y"));
+
   graph2dLine(commitsPerDay(), function(d) {
     return d.x
   }, function(d) {
@@ -148,10 +240,6 @@ function graph2dLine(data, getX, getY) {
   x_axis.selectAll("text")
   .style("text-anchor", "end")
   .attr("font-size", ".6em");
-  // x_axis.append("text")
-  // .attr("x", width/2)
-  // .attr("y", 70)
-  // .text("the X");
 
   svg.append("g").attr("class", "y axis")
   .call(yAxis)
