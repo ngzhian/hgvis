@@ -14,7 +14,8 @@ var loadCommit = function() {
   .done(function(data) {
     window.hgvis_commits = data.all;
     $("#load").attr('value', 'done!');
-    graphcommitsPerDay();
+    graphPerDayPerDev();
+    // graphcommitsPerDay();
     // graphcommitsPerDev();
   })
   .fail(function (jqxhr, textStatus, error) {
@@ -34,7 +35,7 @@ var lineChartAggregateOverDate = function(data, dateFmt) {
 
 var graphcommitsPerDay = function() {
   var commits = commitsPerDay();
-  lineChartAggregateOverDate(commits, d3.time.format("%d/%m/%Y"));
+  lineChartAggregateOverDate({name:'perday',values:commits}, d3.time.format("%d/%m/%Y"));
 }
 
 var graphcommitsPerDev = function() {
@@ -144,10 +145,18 @@ function graph2dDiscrete(data, getX, getY) {
   LineChart supports a fluent API.
     var lineChart = new LineChart();
     lineChart.using(x_parse, y_parse).for([data, another]).plot();
-// lineChart = new lineChart();
-// lineChart.addSeries(series1).addSeries(series2).plot();
+  A serie is an object of the following structure:
+    {
+      name: 'name of serie',
+      values: [data_point_1, data_point_2]
+    }
+  Data points in 'values' must be of the following format:
+    {
+      'by': some_value,
+      'count': some_value
+    }
+  The xParse and yParse function will then be used to parse these values
 */
-
 function LineChart() {
   var _series = []; 
   // default parsing function is the identity function;
@@ -181,7 +190,7 @@ LineChart.prototype.addSeries = function(serie) {
 }
 
 LineChart.prototype.plot = function() {
-  var margin = {top: 20, right: 20, bottom: 30, left: 50},
+  var margin = {top: 20, right: 100, bottom: 30, left: 50},
   width = 960 - margin.left - margin.right,
   height = 500 - margin.top - margin.bottom;
 
@@ -194,22 +203,30 @@ LineChart.prototype.plot = function() {
   .append("g")
   .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-  data = this._series[0];
-
   var xparse = this.x_parse;
   var yparse = this.y_parse;
 
-  data.forEach(function(d) {
-    d.x = xparse(d.by);
-    d.y = yparse(d.count);
+  this._series.forEach(function (data) {
+    data.values.forEach(function(d) {
+      d.x = xparse(d.by);
+      d.y = yparse(d.count);
+      // console.log(data.name + " has " + d.x + " and " + d.y)
+    });
   });
 
-  var line = d3.svg.line()
-  .x(function(d) { return x(d.x); })
-  .y(function(d) { return y(d.y); });
-
-  x.domain(d3.extent(data, function(d) { return d.x; }));
-  y.domain(d3.extent(data, function(d) { return d.y; }));
+  // max value of x domain is from the min date to the max date
+  x.domain([
+    // min
+    d3.min(this._series, function(s) { return d3.min(s.values, function(c) { return c.x }); }),
+    d3.max(this._series, function(s) { return d3.max(s.values, function(c) { return c.x }); })
+    // max
+    ]);
+  y.domain([
+    // min
+    d3.min(this._series, function(s) { return d3.min(s.values, function(c) { return c.y }); }),
+    d3.max(this._series, function(s) { return d3.max(s.values, function(c) { return c.y }); })
+    // max
+    ]);
 
   var xAxis = d3.svg.axis()
   .scale(x)
@@ -234,30 +251,86 @@ LineChart.prototype.plot = function() {
   .style("text-anchor", "end")
   .text("# commits");
 
-  svg.append("path")
-  .datum(data)
-  .attr("class", "line")
-  .attr("d", line);
+  var color = d3.scale.category10();
+  color.domain([0,1,2,3]);
 
-  svg.selectAll(".commit-circle").data(data)
-  .enter().append("g")
-  .append("circle")
-  .attr("class", "commit-circle")
-  .attr("cx", function(d) { return x(d.x); })
-  .attr("r", 15)
-  .attr("cy", function(d) { return y(d.y); })
-  .on("mouseenter", function(d) {
-    var format = d3.time.format("%d/%m/%Y");
-    var xPosition = d3.event.pageX + 10;
-    var yPosition = d3.event.pageY;
-    var tooltip = d3.select("#tooltip")
-    .style("left", xPosition + "px")
-    .style("top", yPosition + "px")
-    tooltip.select("#title").text(format(d.x));
-    tooltip.select("#desc").text(d.y + " commits");
-    tooltip.classed("hidden", false);
-  })
-  .on("mouseleave", function() {
-    d3.select("#tooltip").classed("hidden", true);
+  this._series.forEach(function(val, index, array) {
+    var legend = svg.append("g");
+    legend.append("text")
+    .attr("class", "legend-text-" + index)
+    .text(val.name)
+    .attr("x", width + 15)
+    .attr("y", 4 + index*20);
+
+    legend.append("circle")
+    .attr("class", "legend-circle-" + index)
+    .attr("cx", width)
+    .attr("cy", index*20)
+    .attr("r", 8)
+    .style("stroke", d3.rgb(color(index)).brighter())
+    .style("stroke-width", "0.4em")
+    .style("fill", color(index));
+
+    var line = d3.svg.line()
+    .x(function(d) { return x(d.x); })
+    .y(function(d) { return y(d.y); });
+
+    var data = val.values;
+    svg.append("path")
+    .attr("class", "line")
+    .attr("d", line(data))
+    // .style("stroke", function(d) { console.log(color(index)); return color(index); });
+    .style("stroke", color(index));
+    // .datum(data)
+    // .attr("d", line);
+
+    svg.selectAll(".commit-circle-" + index).data(data)
+    .enter().append("g")
+    .append("circle")
+    .attr("class", "commit-circle")
+    .attr("cx", function(d) { return x(d.x); })
+    .attr("r", 10)
+    .attr("cy", function(d) { return y(d.y); })
+    .style("stroke", d3.rgb(color(index)).brighter())
+    .style("fill", color(index))
+    .on("mouseenter", function(d) {
+      var format = d3.time.format("%d/%m/%Y");
+      var xPosition = d3.event.pageX + 10;
+      var yPosition = d3.event.pageY;
+      var tooltip = d3.select("#tooltip")
+      .style("left", xPosition + "px")
+      .style("top", yPosition + "px");
+      tooltip.select("#title").text(format(d.x));
+      tooltip.select("#desc").text(d.y + " commits");
+      tooltip.classed("hidden", false);
+    })
+    .on("mouseleave", function() {
+      d3.select("#tooltip").classed("hidden", true);
+    });
   });
+
+}
+
+var graphPerDayPerDev = function() {
+  var commits = hgvis_commits;
+  var commits_per_dev = new Splitter().split(commits).by(function(c) {
+    return c.authorName;
+  });
+  var series = {};
+  commits_per_dev.forEach(function(dev) {
+    var agg = new Aggregator().aggregate(dev.values).by(function(c) {
+      var date = new Date(c.date);
+      return [date.getDate(), date.getMonth()+1, date.getFullYear()].join("/");
+    });
+    series[dev.by] = agg;
+  });
+  var arr = [];
+  for (serie in series) {
+    arr.push({name: serie, values: series[serie]});
+  }
+  var lc = new LineChart();
+  var x_parse = d3.time.format("%d/%m/%Y").parse;
+  lc.using(x_parse, function(d) { return d; });
+  lc.for(arr);
+  lc.plot();
 }
