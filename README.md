@@ -7,13 +7,10 @@ It's really an excuse for me to learn some d3js, JavaScript, a little of node, a
 ## What can it do
 As for now it can visualize
 - commits per day
-- commits per week
+- commits per dev per day
 
-![HgVjs](https://raw.githubusercontent.com/ngzhian/hgvis/master/hgvis.png "HgVis looks like this!")
-
-The week is not the conventional week, as in starting on a sunday or monday.
-A week starts from the earliest commit, and any commits from the that till within 7 days
-is considered in the same week as it.
+![HgVis](https://raw.githubusercontent.com/ngzhian/hgvis/master/screens/hgvis.png "HgVis looks like this!")
+![HgVis](https://raw.githubusercontent.com/ngzhian/hgvis/master/screens/commits-per-dev-per-day.png "Visualize commits per developer per day")
 
 In this repo is a `hglog` file which as the commit history of my school project, this allows you to peek at how things look like without much trouble.
 
@@ -23,9 +20,9 @@ You need `node` installed, it depends on `express` and `jade`.
 1. `git clone https://github.com/ngzhian/hgvis.git`
 2. `npm install`
 3. `npm start`
-6. navigate to `localhost:3000`
-7. fill in the text field with `hglog`, press 'Load'
-8. tadaa!
+4. navigate to `localhost:3000`
+
+Just replace `hglog` with your own log file from Mercurial, using `hg log > hglog`
 
 ## How it works
 Things are extremely volatile because I'm still getting a feel of how to do things
@@ -40,11 +37,10 @@ Things are extremely volatile because I'm still getting a feel of how to do thin
 
 3. The client (webpage) receives a json respones from the server, and all d3 processing and drawing is done on `client.js`. Nothing fancy there now, just bar charts with colours and axis. I hope to make more meaningful kinds of visualizations in the future.
 
+4. client.js uses aggregator.js to do splitting of data and aggregation of data. Details can be found in the files.
+
 ## What's planned
-- commits per developer
 - further breakdown for each and every developer
-	- commits per day per developer
-	- commits per week per developer
 - commits for each hour of the day
 	- this may be interested in seeing which hours of the day committers are most active
 - changes in lines of code per commit
