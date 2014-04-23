@@ -1,6 +1,6 @@
 {
   "name": "hgvis",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Visualize Mercurial commits",
   "main": "hgvis.js",
   "scripts": {
@@ -13,6 +13,7 @@
   "license": "ISC",
   "dependencies": {
     "express": "3.x",
-    "jade": "0.27.7"
+    "jade": "0.27.7",
+    "d3-line-chart": "0.1.*"
   }
 }
