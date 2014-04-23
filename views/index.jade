@@ -3,9 +3,10 @@ html
     head
       title= "hi"
       script(type="text/javascript",src="/jquery.js")
+      script(type="text/javascript",src="/d3.js")
+      script(type="text/javascript",src="/d3-line-chart.js")
       script(type="text/javascript",src="/aggregator.js")
       script(type="text/javascript",src="/client.js")
-      script(type="text/javascript",src="/d3.js")
       link(type="text/css", rel="stylesheet", href="/style.css")
       //if lt IE 9
         script(src="http://html5shim.googlecode.com/svn/trunk/html5.js", language="text/javascript")
@@ -21,6 +22,6 @@ html
             br
             input(id="byDev",type="button",value="Commits/Dev")
             div.hidden(id="tooltip")
-              p(id="title")
-              p(id="desc")
+              p.title
+              p.desc
               ul(id="children")
