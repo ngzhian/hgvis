@@ -3,12 +3,10 @@ var app = express();
 var hgvis = require('./hgvis.js');
 
 app.set('views', __dirname + '\\views');
-app.engine('jade', require('jade').__express);
-app.use(express.bodyParser());
 app.use(express.static('public'));
 
 app.get('/', function(req, res) {
-	res.render('index.jade');
+	res.sendfile('index.html')
 });
 
 app.get('/load/:file', function(req, res) {
