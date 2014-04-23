@@ -24,18 +24,11 @@ var loadCommit = function() {
   });
 }
 
-
-var lineChartAggregateOverDate = function(data, dateFmt) {
-  var lc = new LineChart();
-  var x_parse = d3.time.format("%d/%m/%Y").parse;
-  lc.using(x_parse, function(d) { return d; });
-  lc.for([data]);
-  lc.plot();
-}
-
 var graphcommitsPerDay = function() {
   var commits = commitsPerDay();
-  lineChartAggregateOverDate({name:'perday',values:commits}, d3.time.format("%d/%m/%Y"));
+  var lc = new LineChart();
+  var x_parse = d3.time.format("%d/%m/%Y").parse;
+  new LineChart().using(x_parse).for([{name: 'per day', values: commits}]).plot();
 }
 
 var graphcommitsPerDev = function() {
@@ -139,178 +132,6 @@ function graph2dDiscrete(data, getX, getY) {
   });
 }
 
-/*
-  LineChart only plots continuous values against time.
-  It can take in multiple series.
-  LineChart supports a fluent API.
-    var lineChart = new LineChart();
-    lineChart.using(x_parse, y_parse).for([data, another]).plot();
-  A serie is an object of the following structure:
-    {
-      name: 'name of serie',
-      values: [data_point_1, data_point_2]
-    }
-  Data points in 'values' must be of the following format:
-    {
-      'by': some_value,
-      'count': some_value
-    }
-  The xParse and yParse function will then be used to parse these values
-*/
-function LineChart() {
-  var _series = []; 
-  // default parsing function is the identity function;
-  LineChart.prototype.x_parse = function(d) { return d; };
-  LineChart.prototype.y_parse = function(d) { return d; };
-}
-
-/*
-  This method takes in functions to parse the x and y axis values.
-*/
-LineChart.prototype.using = function(xParse, yParse) {
-  function emptyIfUndef(fn) {
-    if (fn == null || fn == undefined) {
-      return function(d) { return d; };
-    } 
-    return fn;
-  }
-  this.x_parse = emptyIfUndef(xParse);
-  this.y_parse = emptyIfUndef(yParse); 
-  return this;
-}
-
-LineChart.prototype.for = function(data) {
-  this._series = data;
-  return this;
-}
-
-LineChart.prototype.addSeries = function(serie) {
-  this._series.push(serie);
-  return this;
-}
-
-LineChart.prototype.plot = function() {
-  var margin = {top: 20, right: 100, bottom: 30, left: 50},
-  width = 960 - margin.left - margin.right,
-  height = 500 - margin.top - margin.bottom;
-
-  var x = d3.time.scale().range([0, width]);
-  var y = d3.scale.linear().range([height, 0]);
-
-  var svg = d3.select("body").append("svg")
-  .attr("width", width + margin.left + margin.right)
-  .attr("height", height + margin.top + margin.bottom)
-  .append("g")
-  .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-  var xparse = this.x_parse;
-  var yparse = this.y_parse;
-
-  this._series.forEach(function (data) {
-    data.values.forEach(function(d) {
-      d.x = xparse(d.by);
-      d.y = yparse(d.count);
-      // console.log(data.name + " has " + d.x + " and " + d.y)
-    });
-  });
-
-  // max value of x domain is from the min date to the max date
-  x.domain([
-    // min
-    d3.min(this._series, function(s) { return d3.min(s.values, function(c) { return c.x }); }),
-    d3.max(this._series, function(s) { return d3.max(s.values, function(c) { return c.x }); })
-    // max
-    ]);
-  y.domain([
-    // min
-    d3.min(this._series, function(s) { return d3.min(s.values, function(c) { return c.y }); }),
-    d3.max(this._series, function(s) { return d3.max(s.values, function(c) { return c.y }); })
-    // max
-    ]);
-
-  var xAxis = d3.svg.axis()
-  .scale(x)
-  .orient("bottom");
-
-  var yAxis = d3.svg.axis()
-  .scale(y)
-  .orient("left");
-
-  svg.append("g")
-  .attr("class", "x axis")
-  .attr("transform", "translate(0," + height + ")")
-  .call(xAxis);
-
-  svg.append("g")
-  .attr("class", "y axis")
-  .call(yAxis)
-  .append("text")
-  .attr("transform", "rotate(-90)")
-  .attr("y", 6)
-  .attr("dy", ".71em")
-  .style("text-anchor", "end")
-  .text("# commits");
-
-  var color = d3.scale.category10();
-  color.domain([0,1,2,3]);
-
-  this._series.forEach(function(val, index, array) {
-    var legend = svg.append("g");
-    legend.append("text")
-    .attr("class", "legend-text-" + index)
-    .text(val.name)
-    .attr("x", width + 15)
-    .attr("y", 4 + index*20);
-
-    legend.append("circle")
-    .attr("class", "legend-circle-" + index)
-    .attr("cx", width)
-    .attr("cy", index*20)
-    .attr("r", 8)
-    .style("stroke", d3.rgb(color(index)).brighter())
-    .style("stroke-width", "0.4em")
-    .style("fill", color(index));
-
-    var line = d3.svg.line()
-    .x(function(d) { return x(d.x); })
-    .y(function(d) { return y(d.y); });
-
-    var data = val.values;
-    svg.append("path")
-    .attr("class", "line")
-    .attr("d", line(data))
-    // .style("stroke", function(d) { console.log(color(index)); return color(index); });
-    .style("stroke", color(index));
-    // .datum(data)
-    // .attr("d", line);
-
-    svg.selectAll(".commit-circle-" + index).data(data)
-    .enter().append("g")
-    .append("circle")
-    .attr("class", "commit-circle")
-    .attr("cx", function(d) { return x(d.x); })
-    .attr("r", 10)
-    .attr("cy", function(d) { return y(d.y); })
-    .style("stroke", d3.rgb(color(index)).brighter())
-    .style("fill", color(index))
-    .on("mouseenter", function(d) {
-      var format = d3.time.format("%d/%m/%Y");
-      var xPosition = d3.event.pageX + 10;
-      var yPosition = d3.event.pageY;
-      var tooltip = d3.select("#tooltip")
-      .style("left", xPosition + "px")
-      .style("top", yPosition + "px");
-      tooltip.select("#title").text(format(d.x));
-      tooltip.select("#desc").text(d.y + " commits");
-      tooltip.classed("hidden", false);
-    })
-    .on("mouseleave", function() {
-      d3.select("#tooltip").classed("hidden", true);
-    });
-  });
-
-}
-
 var graphPerDayPerDev = function() {
   var commits = hgvis_commits;
   var commits_per_dev = new Splitter().split(commits).by(function(c) {
@@ -322,15 +143,30 @@ var graphPerDayPerDev = function() {
       var date = new Date(c.date);
       return [date.getDate(), date.getMonth()+1, date.getFullYear()].join("/");
     });
+    agg.forEach(function(a) {
+      a.x = a.by;
+      a.y = a.count;
+    });
     series[dev.by] = agg;
   });
+
   var arr = [];
   for (serie in series) {
     arr.push({name: serie, values: series[serie]});
   }
-  var lc = new LineChart();
-  var x_parse = d3.time.format("%d/%m/%Y").parse;
-  lc.using(x_parse, function(d) { return d; });
-  lc.for(arr);
+
+  arr.forEach(function(a) {
+    console.log(a.values); 
+  });
+
+  var data = {
+    name: 'custom',
+    values: [{x: "12/04/2014", y: 2}, {x: "13/04/2014", y : 4}, {x:"15/04/2014", y: 3}]
+  };
+  var lc = new LineChart({
+    x_parse: d3.time.format("%d/%m/%Y").parse,
+    x_scale: d3.time.scale(),
+    all_series: arr
+  });
   lc.plot();
 }
