@@ -22,11 +22,7 @@ body {
   fill: none;
 }
 
-.line {
-  fill: none;
-  stroke: rgb(0, 67, 88);
-  stroke-width: 0.3em;
-}
+.line { fill: none; } 
 
 #tooltip {
   position: absolute;
@@ -34,9 +30,6 @@ body {
   height: auto;
   padding: 10px;
   background-color: white;
-  -webkit-border-radius: 10px;
-  -moz-border-radius: 10px;
-  border-radius: 10px;
   -webkit-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
   -moz-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
   box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
@@ -50,10 +43,16 @@ body {
 #tooltip p {
   margin: 0;
   font-family: sans-serif;
-  font-size: 16px;
-  line-height: 20px;
 }
 
-.commit-circle {
-  stroke-width: 0.6em;
+#tooltip .title {
+  text-decoration: underline;
+}
+
+.commit-circle, .legend-circle {
+  stroke-width: 0.22em;
+}
+
+.commit-circle.selected, .legend-circle.selected {
+  stroke-width: 0.40em;
 }
