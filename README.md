@@ -15,7 +15,7 @@ As for now it can visualize
 In this repo is a `hglog` file which as the commit history of my school project, this allows you to peek at how things look like without much trouble.
 
 ## How to run it
-You need `node` installed, it depends on `express` and `jade`.
+You need `node` installed, it depends on `express` and `d3-line-chart`, a library written by yours truly to allow users to quickly plot line charts.
 
 1. `git clone https://github.com/ngzhian/hgvis.git`
 2. `npm install`
