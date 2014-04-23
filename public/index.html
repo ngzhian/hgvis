@@ -1,0 +1,27 @@
+<html>
+<head>
+  <title>HgVis - Visualize your Mercurial commits</title>
+  <script type="text/javascript" src="/jquery.js"></script>
+  <script type="text/javascript" src="/d3.js"></script>
+  <script type="text/javascript" src="/d3-line-chart.js"></script>
+  <script type="text/javascript" src="/aggregator.js"></script>
+  <script type="text/javascript" src="/client.js"></script>
+  <link type="text/css" rel="stylesheet" href="/style.css">
+  <!--[if lt IE 9]><script src="http://html5shim.googlecode.com/svn/trunk/html5.js" language="text/javascript"></script><![endif]-->
+</head>
+<body>
+  <div class="container">
+    <h1>Visualize your Mercurial Commits!</h1>
+    <form method="post" onsubmit="return false" id=""></form>
+    <input id="filename" value="hglog" type="text"><input id="load" value="done!" type="button">
+    <div id="loading"></div>
+    <input id="byDay" value="Commits/Day" type="button"><br><input id="byDev" value="Commits/Dev" type="button">
+    <div id="tooltip" class="hidden">
+      <p class="title"></p>
+      <p class="desc"></p>
+      <ul id="children"></ul>
+    </div>
+  </div>  
+</body>
+</html>
+
