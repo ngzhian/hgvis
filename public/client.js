@@ -155,10 +155,6 @@ var graphPerDayPerDev = function() {
     arr.push({name: serie, values: series[serie]});
   }
 
-  arr.forEach(function(a) {
-    console.log(a.values); 
-  });
-
   var data = {
     name: 'custom',
     values: [{x: "12/04/2014", y: 2}, {x: "13/04/2014", y : 4}, {x:"15/04/2014", y: 3}]
